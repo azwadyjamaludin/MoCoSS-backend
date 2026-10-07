@@ -1,84 +1,117 @@
+# This is the Main FastAPI Application Entrypoint
 import os
-import shutil
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from datetime import datetime, timedelta
+from typing import Optional
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, EmailStr
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from passlib.context import CryptContext
+from jose import jwt
 
-# 1. Initialize FastAPI App
-app = FastAPI(
-    title="MoCoSS v2 AI Supervision API",
-    description="FastAPI backend to process counseling audio and generate Gemini AI feedback.",
-    version="2.0.0"
-)
+from database import engine, Base, SessionLocal
 
-# 2. Configure CORS for frontend communication (Expo / Web / React Native)
+# -------------------------------------------------------------------
+# 1. FastAPI App Initialization
+# -------------------------------------------------------------------
+app = FastAPI(title="MoCoSS Backend API", version="2.0.0")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins for development
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Directory to temporarily store incoming audio recordings
-UPLOAD_DIR = "./temp_audio_uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# -------------------------------------------------------------------
+# 2. Security Configuration
+# -------------------------------------------------------------------
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__ident="2b")
+SECRET_KEY = os.getenv("SECRET_KEY", "mocoss_super_secret_jwt_key")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 480
 
+# -------------------------------------------------------------------
+# 3. Models & Schemas
+# -------------------------------------------------------------------
+class UserModel(Base):
+    __tablename__ = "users"
 
-@app.get("/")
-async def health_check():
-    """Simple health check endpoint to verify backend status."""
-    return {"status": "online", "system": "MoCoSS v2 FastAPI Engine"}
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=True)
+    full_name = Column(String(150), nullable=False)
+    role = Column(String(50), default="supervisor")
+    mydigitalid_sub = Column(String(255), unique=True, nullable=True)
+    is_mydigitalid_verified = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
 
-@app.post("/api/analyze-audio")
-async def analyze_audio(file: UploadFile = File(...)):
-    """
-    Receives an audio file from the frontend, saves it temporarily,
-    and forwards it to the Google Gemini API for clinical supervision analysis.
-    """
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    fullName: str
+    role: str
+    isMyDigitalIdVerified: bool
+
+class LoginResponse(BaseModel):
+    message: str
+    token: str
+    user: UserResponse
+
+# -------------------------------------------------------------------
+# 4. Helper Functions
+# -------------------------------------------------------------------
+def get_password_hash(password: str) -> str:
+    password_bytes = password.encode('utf-8')[:72]
+    return pwd_context.hash(password_bytes.decode('utf-8', errors='ignore'))
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    password_bytes = plain_password.encode('utf-8')[:72]
+    return pwd_context.verify(password_bytes.decode('utf-8', errors='ignore'), hashed_password)
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+# -------------------------------------------------------------------
+# 5. Startup Event
+# -------------------------------------------------------------------
+@app.on_event("startup")
+def startup_event():
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
     try:
-        # Validate file extension
-        allowed_extensions = [".m4a", ".mp3", ".wav", ".webm", ".aac"]
-        file_ext = os.path.splitext(file.filename)[1].lower()
-        if file_ext not in allowed_extensions:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Unsupported file format: {file_ext}. Allowed: {allowed_extensions}"
+        demo = db.query(UserModel).filter(UserModel.email == "supervisor@mocoss.my").first()
+        if not demo:
+            hashed = get_password_hash("password123")
+            demo_user = UserModel(
+                email="supervisor@mocoss.my",
+                password_hash=hashed,
+                full_name="Dr. Supervision Lead",
+                role="supervisor"
             )
-
-        # Save audio file locally
-        temp_file_path = os.path.join(UPLOAD_DIR, file.filename)
-        with open(temp_file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        print(f"[MoCoSS v2] Audio successfully received and saved to: {temp_file_path}")
-
-        # --- Gemini AI Processing Placeholders ---
-        # 1. Upload audio to Gemini API using google-genai SDK
-        # 2. Prompt Gemini for counseling feedback & transcript analysis
-        # 3. Clean up local file after processing
-
-        # Temporary structured response for testing
-        return {
-            "success": True,
-            "filename": file.filename,
-            "content_type": file.content_type,
-            "supervision_feedback": {
-                "summary": "Counseling session recorded successfully.",
-                "key_themes": ["Active listening", "Empathy validation"],
-                "recommendation": "Ready for Gemini API integration step."
-            }
-        }
-
+            db.add(demo_user)
+            db.commit()
+            print("[INFO] Demo user created: supervisor@mocoss.my / password123")
     except Exception as e:
-        print(f"Error processing audio upload: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Audio processing error: {str(e)}")
+        db.rollback()
+        print(f"[WARNING] Error seeding demo user: {e}")
     finally:
-        # Clean up temporary file memory pointer
-        file.file.close()
+        db.close()
 
+# -------------------------------------------------------------------
+# 6. Include Modular Routers
+# -------------------------------------------------------------------
+from routes.system import router as system_router
+from routes.auth import router as auth_router
 
-if __name__ == "__main__":
-    import uvicorn
-    # Launch server on port 8000
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+app.include_router(system_router)
+app.include_router(auth_router)
