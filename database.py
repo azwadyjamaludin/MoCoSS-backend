@@ -3,15 +3,19 @@ database.py - Database Connection & Session Configuration
 """
 import os
 import urllib.parse
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+# Load environment variables
+load_dotenv()
+
 # Database Credentials
-DB_USER = os.getenv("DB_USER", "root")
-DB_PASS = os.getenv("DB_PASS", "4z14zW@dy") # os.getenv = Handle special characters in password
-DB_NAME = os.getenv("DB_NAME", "mocoss_db")
-SOCKET_PATH = "/Volumes/MicroSD/mysql.sock"
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS") # os.getenv = Handle special characters in password
+DB_NAME = os.getenv("DB_NAME")
+SOCKET_PATH = os.getenv("SOCKET_PATH")  # Path to MySQL socket on MicroSD
 
 # Encode socket path and build URL safely using URL.create
 DATABASE_URL = URL.create(
