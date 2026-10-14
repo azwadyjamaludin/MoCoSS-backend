@@ -126,6 +126,16 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 # -------------------------------------------------------------------
 from routes.system import router as system_router
 from routes.auth import router as auth_router
+from routes.ind_coun import router as indcoun_router
 
 app.include_router(system_router)
 app.include_router(auth_router)
+app.include_router(indcoun_router)
+
+# Define storage directories
+AUDIO_DIR = "uploadAudio"
+VIDEO_DIR = "uploadVideo"
+
+# Automatically create the directories if don't exist
+os.makedirs(AUDIO_DIR, exist_ok=True)
+os.makedirs(VIDEO_DIR, exist_ok=True)
