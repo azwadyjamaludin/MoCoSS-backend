@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
-from main import (
+from models.userM import (
     LoginRequest,
     LoginResponse,
     UserResponse,
@@ -25,8 +25,12 @@ def get_db():
 
 @router.post("/login", response_model=LoginResponse)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-    """Authenticates a user with email and password, returning a JWT token."""
+    
+    print(f"DEBUG: Attempted login for {request.email} with password '{request.password}'")
     user = db.query(UserModel).filter(UserModel.email == request.email).first()
+
+    if user:
+        print(f"DEBUG: Found user in DB. Stored hash: {user.hashed_password}")
 
     if not user:
         raise HTTPException(

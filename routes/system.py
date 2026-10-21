@@ -18,5 +18,5 @@ async def health_check():
     return {
         "status": "online",
         "system": "MoCoSS Backend",
-        "database": "MySQL (MicroSD)"
+        "database": "MySQL (MacintoshHD2)"
     }
