@@ -38,13 +38,13 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             detail="Invalid email or password."
         )
 
-    if not user.password_hash:
+    if not user.hashed_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Account configured for MyDigital ID login only."
         )
 
-    if not verify_password(request.password, user.password_hash):
+    if not verify_password(request.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password."
@@ -62,7 +62,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             email=user.email,
             fullName=user.full_name,
             role=user.role,
-            isMyDigitalIdVerified=user.is_mydigitalid_verified or False
+            isMyDID=user.is_mydid
         )
     )
 

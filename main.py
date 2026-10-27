@@ -2,30 +2,34 @@
 import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-# Load environment variables
-load_dotenv()
 from database import engine, Base, SessionLocal
 from models.userM import UserModel, get_password_hash
+
+load_dotenv()
 
 # -------------------------------------------------------------------
 # Lifespan Event Handler (Startup / Shutdown)
 # -------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup logic
+    
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         demo = db.query(UserModel).filter(UserModel.email == "supervisor@mocoss.my").first()
+        demo2 = db.query(UserModel).filter(UserModel.email == "f_supervisor@mocoss.my").first()
+        demo3 = db.query(UserModel).filter(UserModel.email == "counselor@mocoss.my").first()
+        hashed = get_password_hash("password123")
+        hashed2 = get_password_hash("password456")
+        hashed3 = get_password_hash("password789")
+
         if not demo:
-            hashed = get_password_hash("password123")
             demo_user = UserModel(
+                username="Test SV",
                 email="supervisor@mocoss.my",
-                password_hash=hashed,
+                hashed_password=hashed,
                 full_name="Dr. Supervision Lead",
                 role="supervisor"
             )
@@ -34,21 +38,61 @@ async def lifespan(app: FastAPI):
             print("[INFO] Demo user created: supervisor@mocoss.my / password123")
             
         else:
+            demo.username = "Test SV"
             demo.password_hash = hashed
             demo.full_name = "Dr. Supervision Lead"
             demo.role = "supervisor"
             db.commit()
             print("[INFO] Demo user updated: supervisor@mocoss.my")
+   
+        if not demo2:
+            demo_user2 = UserModel(
+                username="Test FSV",
+                email="f_supervisor@mocoss.my",
+                hashed_password=hashed2,
+                full_name="Dr. Feild Supervisor",
+                role="field supervisor"
+                )
+            db.add(demo_user2)
+            db.commit()
+            print("[INFO] Demo user created: f_supervisor@mocoss.my / password456")
+                    
+        else:
+            demo2.username = "Test FSV"
+            demo2.password_hash = hashed2
+            demo2.full_name = "Dr. Field Supervisor"
+            demo2.role = "field supervisor"
+            db.commit()
+            print("[INFO] Demo user updated: f_supervisor@mocoss.my")
+       
+        
+        if not demo3:
+            demo_user3 = UserModel(
+                username="Test COUN",
+                email="counselor@mocoss.my",
+                hashed_password=hashed3,
+                full_name="UPSI Counselor",
+                role="counselor"
+                )
+            db.add(demo_user3)
+            db.commit()
+            print("[INFO] Demo user created: counselor@mocoss.my / password789")
+                        
+        else:
+            demo3.username = "Test COUN"
+            demo3.password_hash = hashed3
+            demo3.full_name = "UPSI Counselor"
+            demo3.role = "counselor"
+            db.commit()
+            print("[INFO] Demo user updated: counselor@mocoss.my")
     except Exception as e:
         db.rollback()
         print(f"[WARNING] Error seeding demo user: {e}")
     finally:
         db.close()
         
-    yield  # Application runs while suspended here
+    yield  
     
-    # Shutdown logic (if needed in the future)
-
 # -------------------------------------------------------------------
 # FastAPI App Initialization
 # -------------------------------------------------------------------
@@ -72,10 +116,12 @@ app.add_middleware(
 from routes.system import router as system_router
 from routes.auth import router as auth_router
 from routes.ind_coun import router as indcoun_router
+from routes.grp_coun import router as grpcoun_router
 
 app.include_router(system_router)
 app.include_router(auth_router)
 app.include_router(indcoun_router)
+app.include_router(grpcoun_router)
 
 # Define storage directories
 AUDIO_DIR = "uploadAudio"

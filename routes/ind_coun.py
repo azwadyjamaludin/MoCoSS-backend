@@ -14,7 +14,7 @@ router = APIRouter(
     tags=["Individual Counseling"]
 )
 
-class IndcounCreateSchema(BaseModel):
+class IndcounData(BaseModel):
     client_name: str
     session_notes: str
     audio_url: str = None
@@ -23,7 +23,7 @@ class IndcounCreateSchema(BaseModel):
 
 @router.post("/sessions", status_code=status.HTTP_201_CREATED)
 def create_session(
-    data: IndcounCreateSchema, 
+    data: IndcounData = Depends(), 
     client_name: str = Form(...),
     session_notes: str = Form(...),
     audio_file: UploadFile = File(None),
@@ -70,8 +70,8 @@ def create_session(
     new_session = create_indcoun_record(
         client_name=client_name,
         session_notes=session_notes,
-        audio_url=audio_url,
-        video_url=video_url,
+        audio_file_path=audio_url,
+        video_file_path=video_url,
         ai_feedback=ai_feedback
     )
     
@@ -82,8 +82,8 @@ def create_session(
             "id": new_session.id,
             "client_name": new_session.client_name,
             "session_notes": new_session.session_notes,
-            "audio_url": new_session.audio_url,
-            "video_url": new_session.video_url,
+            "audio_file_path": new_session.audio_file_path,
+            "video_file_path": new_session.video_file_path,
             "ai_feedback": new_session.ai_feedback,
             "created_at": new_session.created_at
         }

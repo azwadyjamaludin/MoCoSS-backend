@@ -13,9 +13,9 @@ load_dotenv()
 
 # Database Credentials
 DB_USER = os.getenv("DB_USER")
-DB_PASS = os.getenv("DB_PASS") # os.getenv = Handle special characters in password
+DB_PASS = os.getenv("DB_PASS") 
 DB_NAME = os.getenv("DB_NAME")
-SOCKET_PATH = os.getenv("SOCKET_PATH")  # Path to MySQL socket on MicroSD
+SOCKET_PATH = os.getenv("SOCKET_PATH")  
 
 # Encode socket path and build URL safely using URL.create
 DATABASE_URL = URL.create(

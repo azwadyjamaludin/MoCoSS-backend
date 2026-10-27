@@ -1,27 +1,29 @@
 import os
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, TIMESTAMP, ForeignKey, text
+from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from database import Base
 from pydantic import BaseModel, EmailStr
 from passlib.context import CryptContext
 from jose import jwt
+
 import hashlib
 
-# -------------------------------------------------------------------
-# 4. Models & Schemas
-# -------------------------------------------------------------------
 class UserModel(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(255), unique=True, nullable=False, index=True)
-    password_hash = Column(String(255), nullable=True)
-    full_name = Column(String(150), nullable=False)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    username = Column(String(50), unique=True, index=True, nullable=False)
+    full_name = Column(String(100), nullable=True)
+    hashed_password = Column(String(255), nullable=False)
     role = Column(String(50), default="supervisor")
-    mydigitalid_sub = Column(String(255), unique=True, nullable=True)
-    is_mydigitalid_verified = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    is_active = Column(Boolean, default=True)
+    is_mydid = Column(Boolean, default=False)
+    created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"))
+
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -32,7 +34,7 @@ class UserResponse(BaseModel):
     email: str
     fullName: str
     role: str
-    isMyDigitalIdVerified: bool
+    isMyDID: bool
 
 class LoginResponse(BaseModel):
     message: str
@@ -45,8 +47,7 @@ class LoginResponse(BaseModel):
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__ident="2b")
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))  # Default to 8 hours if not set
-
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))  
 # -------------------------------------------------------------------
 # Helper Functions
 # -------------------------------------------------------------------
