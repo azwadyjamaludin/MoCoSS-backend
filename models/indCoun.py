@@ -1,5 +1,4 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, TIMESTAMP, text
-from sqlalchemy.orm import relationship
 from database import Base
 
 class IndCounSession(Base):

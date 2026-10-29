@@ -89,4 +89,54 @@ CREATE TABLE IF NOT EXISTS fsk_registry (
     INDEX idx_fsk_registry_identifier (identifier)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ------------------------------------------------------------------------
+-- 4. Case Analysis Table (case-anal)
+-- ------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS case_analyses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    client_code VARCHAR(100) NOT NULL,
+    presenting_problem TEXT NOT NULL,
+    session_dynamics TEXT NULL,
+    ai_supervision_feedback TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_case_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX idx_case_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------
+-- 5. Log-Book Table (log-book)
+-- ------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS log_books (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    activity_title VARCHAR(255) NOT NULL,
+    session_date DATE NOT NULL,
+    duration_minutes INT DEFAULT 60,
+    category VARCHAR(50) DEFAULT 'Individual',
+    reflection_notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_log_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX idx_log_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------------------
+-- 6. Referral Consultation Table (ref-cons)
+-- ------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS referral_consultations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    referred_to VARCHAR(150) NOT NULL,
+    reason_for_referral TEXT NOT NULL,
+    case_summary TEXT NULL,
+    status VARCHAR(50) DEFAULT 'Pending',
+    recommendations TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ref_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX idx_ref_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

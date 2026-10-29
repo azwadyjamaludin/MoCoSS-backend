@@ -117,11 +117,17 @@ from routes.system import router as system_router
 from routes.auth import router as auth_router
 from routes.ind_coun import router as indcoun_router
 from routes.grp_coun import router as grpcoun_router
+from routes.case_anal import router as case_anal_router
+from routes.log_book import router as log_book_router
+from routes.ref_cons import router as ref_cons_router
 
 app.include_router(system_router)
 app.include_router(auth_router)
 app.include_router(indcoun_router)
 app.include_router(grpcoun_router)
+app.include_router(case_anal_router)
+app.include_router(log_book_router)
+app.include_router(ref_cons_router)
 
 # Define storage directories
 AUDIO_DIR = "uploadAudio"
