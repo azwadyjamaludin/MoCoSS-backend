@@ -1,6 +1,3 @@
-"""
-routes/auth.py - Authentication API Routes
-"""
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
