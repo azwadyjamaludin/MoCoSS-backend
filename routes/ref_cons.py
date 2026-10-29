@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from services.refConsService import create_referral, get_referrals_by_user
 
-router = APIRouter(prefix="/ref-cons", tags=["Referral Consultation"])
+router = APIRouter(prefix="/api/ref-cons", tags=["Referral Consultation"])
 
 class ReferralCreateSchema(BaseModel):
     referred_to: str

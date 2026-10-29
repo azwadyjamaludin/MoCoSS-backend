@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from services.caseAnalService import create_case_analysis, get_case_analyses_by_user
 
-router = APIRouter(prefix="/case-anal", tags=["Case Analysis"])
+router = APIRouter(prefix="/api/case-anal", tags=["Case Analysis"])
 
 class CaseAnalysisCreateSchema(BaseModel):
     client_code: str

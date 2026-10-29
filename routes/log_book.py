@@ -5,7 +5,7 @@ from database import get_db
 from services.logBookService import create_log_entry, get_log_entries_by_user
 from datetime import date
 
-router = APIRouter(prefix="/log-book", tags=["Log Book"])
+router = APIRouter(prefix="/api/log-book", tags=["Log Book"])
 
 class LogBookCreateSchema(BaseModel):
     activity_title: str
