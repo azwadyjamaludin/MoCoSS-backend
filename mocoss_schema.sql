@@ -69,4 +69,24 @@ CREATE TABLE IF NOT EXISTS grpCoun_sessions (
     INDEX idx_grp_session_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ------------------------------------------------------------------------
+-- 4. FSK Registry Table (people allowed to register; see migrations/001)
+-- ------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS fsk_registry (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    identifier VARCHAR(50) NOT NULL UNIQUE,
+    full_name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    role VARCHAR(50) NOT NULL,
+    user_id INT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_fsk_registry_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+    INDEX idx_fsk_registry_identifier (identifier)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
