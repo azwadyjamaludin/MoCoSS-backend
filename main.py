@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base, SessionLocal
 from models.userM import UserModel, get_password_hash
+from services.evaluationService import seed_default_criteria
 
 load_dotenv()
 
@@ -85,6 +86,7 @@ async def lifespan(app: FastAPI):
             demo3.role = "counselor"
             db.commit()
             print("[INFO] Demo user updated: counselor@mocoss.my")
+        seed_default_criteria(db)  # default grading rubric, only if the table is empty
     except Exception as e:
         db.rollback()
         print(f"[WARNING] Error seeding demo user: {e}")
@@ -120,6 +122,11 @@ from routes.grp_coun import router as grpcoun_router
 from routes.case_anal import router as case_anal_router
 from routes.log_book import router as log_book_router
 from routes.ref_cons import router as ref_cons_router
+from routes.self_reflection import router as self_reflection_router
+from routes.psy_edu import router as psy_edu_router
+from routes.prof_dev import router as prof_dev_router
+from routes.full_mark import router as full_mark_router
+from routes.adm_mgt import router as adm_mgt_router
 
 app.include_router(system_router)
 app.include_router(auth_router)
@@ -128,6 +135,11 @@ app.include_router(grpcoun_router)
 app.include_router(case_anal_router)
 app.include_router(log_book_router)
 app.include_router(ref_cons_router)
+app.include_router(self_reflection_router)
+app.include_router(psy_edu_router)
+app.include_router(prof_dev_router)
+app.include_router(full_mark_router)
+app.include_router(adm_mgt_router)
 
 # Define storage directories
 AUDIO_DIR = "uploadAudio"
