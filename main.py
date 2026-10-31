@@ -125,6 +125,7 @@ from routes.ref_cons import router as ref_cons_router
 from routes.self_reflection import router as self_reflection_router
 from routes.psy_edu import router as psy_edu_router
 from routes.prof_dev import router as prof_dev_router
+from routes.psy_test import router as psy_test_router
 from routes.full_mark import router as full_mark_router
 from routes.adm_mgt import router as adm_mgt_router
 
@@ -138,6 +139,7 @@ app.include_router(ref_cons_router)
 app.include_router(self_reflection_router)
 app.include_router(psy_edu_router)
 app.include_router(prof_dev_router)
+app.include_router(psy_test_router)
 app.include_router(full_mark_router)
 app.include_router(adm_mgt_router)
 

@@ -216,5 +216,20 @@ CREATE TABLE IF NOT EXISTS supervisor_assignments (
     INDEX idx_assign_supervisee (supervisee_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS psychology_tests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    test_name VARCHAR(150) NOT NULL,
+    case_ref VARCHAR(100) NULL,            -- de-identified case code, never a client name
+    test_date DATE NOT NULL,
+    raw_score DECIMAL(7,2) NULL,
+    interpretation VARCHAR(255) NULL,
+    notes TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_psytest_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_psytest_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 SET FOREIGN_KEY_CHECKS = 1;
