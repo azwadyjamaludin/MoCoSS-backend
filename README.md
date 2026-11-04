@@ -10,3 +10,7 @@ version="2.0.0"
 
    USE mocoss;
    SOURCE /Volumes/MacintoshHD2/Users/azwady/Projects/VSCode/MoCoSS backend/mocoss_schema.sql;
+
+-- in case mysql not properly shut down
+   pgrep -l mysqld
+   kill [PID]

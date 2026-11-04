@@ -29,6 +29,14 @@ CREATE TABLE IF NOT EXISTS indCoun_sessions (
     session_notes TEXT NULL,
     transcript TEXT NULL,
     ai_feedback TEXT NULL,
+    client_status VARCHAR(255) NULL,
+    duration_minutes INT NULL,
+    consent_given BOOLEAN DEFAULT FALSE,
+    ai_status VARCHAR(20) DEFAULT 'none', -- none | pending | processing | done | failed | skipped
+    ai_error VARCHAR(255) NULL,
+    ai_generated_at TIMESTAMP NULL,
+    ai_model VARCHAR(100) NULL,
+    ai_prompt_version VARCHAR(20) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_ind_session_user 
@@ -50,6 +58,14 @@ CREATE TABLE IF NOT EXISTS grpCoun_sessions (
     session_notes TEXT NULL,
     transcript TEXT NULL,
     ai_feedback TEXT NULL,
+    client_status VARCHAR(255) NULL,
+    duration_minutes INT NULL,
+    consent_given BOOLEAN DEFAULT FALSE,
+    ai_status VARCHAR(20) DEFAULT 'none', -- none | pending | processing | done | failed | skipped
+    ai_error VARCHAR(255) NULL,
+    ai_generated_at TIMESTAMP NULL,
+    ai_model VARCHAR(100) NULL,
+    ai_prompt_version VARCHAR(20) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_grp_session_user 
