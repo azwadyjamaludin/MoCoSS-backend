@@ -10,12 +10,7 @@ from services.authService import get_current_user
 
 
 def build_session_router(prefix: str, tag: str, Model, kind: str, code_attr: str) -> APIRouter:
-    """Routes shared by individual and group counseling:
-
-    POST /sessions        upload a session. Returns at once with ai_status "pending", the AI runs in the background
-    GET  /sessions        your sessions, newest first
-    GET  /sessions/{id}   one session. The app polls this until ai_status is done or failed
-    """
+    
     router = APIRouter(prefix=prefix, tags=[tag])
 
     @router.post("/sessions", status_code=status.HTTP_201_CREATED)
