@@ -58,4 +58,8 @@ def build_session_router(prefix: str, tag: str, Model, kind: str, code_attr: str
     def get_session(session_id: int, user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
         return {"status": "success", "data": svc.present(svc.get_session(db, Model, user.id, session_id), code_attr)}
 
+    @router.post("/feedback/{session_id}")
+    def save_feedback(session_id: int, user: UserModel = Depends(get_current_user), db: Session = Depends(get_db),sv_feedback: str = Form(...)):
+            return {"status": "success", "data": svc.present(svc.save_feedback(db, Model, user.id, session_id, sv_feedback), code_attr)}
+
     return router

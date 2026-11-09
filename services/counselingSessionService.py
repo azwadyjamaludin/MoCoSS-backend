@@ -164,3 +164,12 @@ def _mark_failed(db: Session, Model, session_id: int, message: str) -> None:
     if record is not None:
         record.ai_status, record.ai_error = "failed", message[:255]
         db.commit()
+
+def save_feedback(db: Session, Model, user_id: int, session_id: int, feedback: str):
+    record = db.query(Model).filter(Model.id == session_id, Model.user_id == user_id).first()
+    if record is None:
+        raise HTTPException(status_code=404, detail="Session not found.")
+    record.sv_feedback = feedback
+    db.commit()
+    db.refresh(record)
+    return record
