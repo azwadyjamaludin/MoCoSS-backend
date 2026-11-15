@@ -14,10 +14,10 @@ from models.refCons import ReferralConsultationModel
 from models.selfReflection import SelfReflectionModel
 from models.supervisorAssignment import SupervisorAssignmentModel
 from models.userM import UserModel
-from services.authService import SUPERVISOR_ROLES
+from services.authService import ADMIN_ROLES, SUPERVISOR_ROLES
 from services.serializeUtil import to_dict
 
-VALID_ROLES = ("admin", "supervisor", "field supervisor", "counselor")
+VALID_ROLES = ("superadmin", "admin", "supervisor", "field supervisor", "counselor")
 
 
 def _user_view(u: UserModel) -> dict:
@@ -27,7 +27,6 @@ def _user_view(u: UserModel) -> dict:
     }
 
 
-# --------------------------------------------------------------------- users
 def list_users(db: Session, role: Optional[str] = None, q: Optional[str] = None):
     query = db.query(UserModel)
     if role:
@@ -43,9 +42,12 @@ def update_user(db: Session, admin: UserModel, user_id: int, role: Optional[str]
     if user is None:
         raise HTTPException(status_code=404, detail="User not found.")
     if user.id == admin.id and (
-        (role is not None and role != "admin") or is_active is False
+        (role is not None and role not in ADMIN_ROLES) or is_active is False
     ):
         raise HTTPException(status_code=400, detail="You cannot demote or deactivate your own account.")
+    
+    if admin.role != "superadmin" and (role == "superadmin" or user.role == "superadmin"):
+        raise HTTPException(status_code=403, detail="Only a superadmin can grant or change the superadmin role.")
     if role is not None:
         if role not in VALID_ROLES:
             raise HTTPException(status_code=422, detail=f"Role must be one of: {', '.join(VALID_ROLES)}.")
@@ -57,7 +59,6 @@ def update_user(db: Session, admin: UserModel, user_id: int, role: Optional[str]
     return _user_view(user)
 
 
-# --------------------------------------------------------------- assignments
 def _assignment_view(db: Session, a: SupervisorAssignmentModel) -> dict:
     supervisor = db.get(UserModel, a.supervisor_id)
     supervisee = db.get(UserModel, a.supervisee_id)
@@ -78,7 +79,7 @@ def create_assignment(db: Session, supervisor_id: int, supervisee_id: int):
     supervisor = db.get(UserModel, supervisor_id)
     supervisee = db.get(UserModel, supervisee_id)
     if supervisor is None or supervisor.role not in SUPERVISOR_ROLES:
-        raise HTTPException(status_code=422, detail="supervisor_id must be a supervisor or field supervisor.")
+        raise HTTPException(status_code=422, detail="supervisor_id must be a supervisor or superadmin.")
     if supervisee is None or supervisee.role != "counselor":
         raise HTTPException(status_code=422, detail="supervisee_id must be a counselor.")
     assignment = SupervisorAssignmentModel(supervisor_id=supervisor_id, supervisee_id=supervisee_id)
@@ -100,7 +101,6 @@ def delete_assignment(db: Session, assignment_id: int) -> None:
     db.commit()
 
 
-# -------------------------------------------------------------------- rubric
 def list_all_criteria(db: Session):
     rows = db.query(EvaluationCriterionModel).order_by(EvaluationCriterionModel.sort_order, EvaluationCriterionModel.id)
     return [to_dict(c) for c in rows]
@@ -126,7 +126,6 @@ def update_criterion(db: Session, criterion_id: int, data: dict):
 
 
 def deactivate_criterion(db: Session, criterion_id: int) -> None:
-    """Soft delete: old evaluations keep pointing at the criterion they were scored on."""
     criterion = db.get(EvaluationCriterionModel, criterion_id)
     if criterion is None:
         raise HTTPException(status_code=404, detail="Criterion not found.")
@@ -134,7 +133,6 @@ def deactivate_criterion(db: Session, criterion_id: int) -> None:
     db.commit()
 
 
-# ------------------------------------------------------------------- reports
 def _count_by_user(db: Session, model, user_col):
     return dict(db.query(user_col, func.count(model.id)).group_by(user_col).all())
 

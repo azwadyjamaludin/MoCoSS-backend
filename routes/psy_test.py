@@ -9,7 +9,7 @@ from routes.owned_router import build_owned_router
 
 class PsychologyTestSchema(BaseModel):
     test_name: str
-    case_ref: Optional[str] = None  # de-identified code only, never a client name
+    case_ref: Optional[str] = None  
     test_date: date
     raw_score: Optional[float] = None
     interpretation: Optional[str] = None

@@ -7,11 +7,10 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models.userM import UserModel
 from services import adminService
-from services.authService import require_roles
+from services.authService import ADMIN_ROLES, require_roles
 
-# Every route here is admin only.
 router = APIRouter(
-    prefix="/api/adm-mgt", tags=["Admin Management"], dependencies=[Depends(require_roles("admin"))]
+    prefix="/api/adm-mgt", tags=["Admin Management"], dependencies=[Depends(require_roles(*ADMIN_ROLES))]
 )
 
 
@@ -37,7 +36,6 @@ class CriterionSchema(BaseModel):
     is_active: bool = True
 
 
-# --------------------------------------------------------------------- users
 @router.get("/users")
 def users(role: Optional[str] = None, q: Optional[str] = None, db: Session = Depends(get_db)):
     return {"status": "success", "data": adminService.list_users(db, role, q)}
@@ -46,12 +44,11 @@ def users(role: Optional[str] = None, q: Optional[str] = None, db: Session = Dep
 @router.patch("/users/{user_id}")
 def patch_user(
     user_id: int, data: UserUpdateSchema,
-    admin: UserModel = Depends(require_roles("admin")), db: Session = Depends(get_db),
+    admin: UserModel = Depends(require_roles(*ADMIN_ROLES)), db: Session = Depends(get_db),
 ):
     return {"status": "success", "data": adminService.update_user(db, admin, user_id, data.role, data.is_active)}
 
 
-# --------------------------------------------------------------- assignments
 @router.get("/assignments")
 def assignments(db: Session = Depends(get_db)):
     return {"status": "success", "data": adminService.list_assignments(db)}
@@ -67,7 +64,6 @@ def remove_assignment(assignment_id: int, db: Session = Depends(get_db)):
     adminService.delete_assignment(db, assignment_id)
 
 
-# -------------------------------------------------------------------- rubric
 @router.get("/criteria")
 def criteria(db: Session = Depends(get_db)):
     return {"status": "success", "data": adminService.list_all_criteria(db)}
@@ -88,7 +84,6 @@ def remove_criterion(criterion_id: int, db: Session = Depends(get_db)):
     adminService.deactivate_criterion(db, criterion_id)
 
 
-# ------------------------------------------------------------------- reports
 @router.get("/reports/overview")
 def reports_overview(db: Session = Depends(get_db)):
     return {"status": "success", "data": adminService.overview(db)}

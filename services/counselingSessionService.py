@@ -9,7 +9,9 @@ from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
+from models.userM import UserModel
 from services import aiService
+from services.reviewService import supervisee_ids
 
 log = logging.getLogger("mocoss.sessions")
 
@@ -108,7 +110,7 @@ def present(record, code_attr: str) -> dict:
     if record.ai_feedback:
         try:
             feedback = json.loads(record.ai_feedback)
-        except json.JSONDecodeError:  # older rows hold plain text
+        except json.JSONDecodeError:  
             feedback = {"summary": record.ai_feedback, "strengths": [], "areas_to_improve": [],
                         "skills_observed": [], "ethical_flags": [], "questions_for_supervision": [], "is_mock": False}
     return {
@@ -124,10 +126,10 @@ def present(record, code_attr: str) -> dict:
         "ai_error": record.ai_error,
         "ai_generated_at": record.ai_generated_at.isoformat() if record.ai_generated_at else None,
         "ai_feedback": feedback,
+        "sv_feedback": record.sv_feedback,
         "transcript": record.transcript,
         "created_at": record.created_at.isoformat() if record.created_at else None,
     }
-
 
 def run_session_analysis(Model, session_id: int, kind: str, language: str) -> None:
     """Runs after the upload response was sent. Uses its own DB session because the request's is closed by then."""
@@ -165,10 +167,41 @@ def _mark_failed(db: Session, Model, session_id: int, message: str) -> None:
         record.ai_status, record.ai_error = "failed", message[:255]
         db.commit()
 
-def save_feedback(db: Session, Model, user_id: int, session_id: int, feedback: str):
-    record = db.query(Model).filter(Model.id == session_id, Model.user_id == user_id).first()
-    if record is None:
+
+def _assigned_session(db: Session, Model, supervisor: UserModel, session_id: int):
+    record = db.get(Model, session_id)
+    # same answer for "missing" and "not your counselor's", so ids cannot be probed
+    if record is None or record.user_id not in supervisee_ids(db, supervisor):
         raise HTTPException(status_code=404, detail="Session not found.")
+    return record
+
+
+def present_for_review(db: Session, record, code_attr: str) -> dict:
+    data = present(record, code_attr)
+    counselor = db.get(UserModel, record.user_id)
+    data["counselor_id"] = record.user_id
+    data["counselor_name"] = (counselor.full_name or counselor.email) if counselor else None
+    data["has_feedback"] = bool(record.sv_feedback)
+    return data
+
+
+def list_for_supervisor(db: Session, Model, supervisor: UserModel) -> list:
+    ids = supervisee_ids(db, supervisor)
+    if not ids:
+        return []
+    rows = db.query(Model).filter(Model.user_id.in_(ids)).order_by(Model.id.desc()).all()
+    return rows
+
+
+def get_for_supervisor(db: Session, Model, supervisor: UserModel, session_id: int):
+    return _assigned_session(db, Model, supervisor, session_id)
+
+
+def save_feedback(db: Session, Model, supervisor: UserModel, session_id: int, feedback: str):
+    feedback = (feedback or "").strip()
+    if not feedback:
+        raise HTTPException(status_code=422, detail="Feedback cannot be empty.")
+    record = _assigned_session(db, Model, supervisor, session_id)
     record.sv_feedback = feedback
     db.commit()
     db.refresh(record)

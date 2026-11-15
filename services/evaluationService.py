@@ -12,7 +12,6 @@ from services.serializeUtil import to_dict
 
 SUPERVISEE_ROLE = "counselor"
 
-# Used only when the rubric table is empty. Admins can change it in Admin Management.
 DEFAULT_CRITERIA = [
     ("Counseling skills", "Rapport, listening, probing and use of techniques", 20),
     ("Case conceptualization", "Quality of case analysis and formulation", 20),
@@ -30,7 +29,6 @@ def seed_default_criteria(db: Session) -> None:
     db.commit()
 
 
-# ------------------------------------------------------------------ rubric
 def list_criteria(db: Session, only_active: bool = True):
     query = db.query(EvaluationCriterionModel)
     if only_active:
@@ -38,12 +36,9 @@ def list_criteria(db: Session, only_active: bool = True):
     return query.order_by(EvaluationCriterionModel.sort_order, EvaluationCriterionModel.id).all()
 
 
-# ------------------------------------------------------------ who can be graded
 def list_supervisees(db: Session, user: UserModel):
-    """Admins see every counselor; supervisors see only the counselors assigned to them."""
+    """Supervisors (and superadmins) see only the counselors assigned to them. Plain admins do not supervise."""
     query = db.query(UserModel).filter(UserModel.role == SUPERVISEE_ROLE, UserModel.is_active.is_(True))
-    if user.role == "admin":
-        return query.order_by(UserModel.full_name).all()
     assigned_ids = [
         a.supervisee_id
         for a in db.query(SupervisorAssignmentModel).filter(SupervisorAssignmentModel.supervisor_id == user.id)
@@ -53,7 +48,6 @@ def list_supervisees(db: Session, user: UserModel):
     return query.filter(UserModel.id.in_(assigned_ids)).order_by(UserModel.full_name).all()
 
 
-# ----------------------------------------------------------- create / read
 def create_evaluation(db: Session, evaluator: UserModel, supervisee_id: int, comments, scores: List[dict]):
     if evaluator.role not in SUPERVISOR_ROLES:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only supervisors can evaluate.")
@@ -136,6 +130,6 @@ def get_evaluation(db: Session, user: UserModel, evaluation_id: int) -> dict:
     allowed = evaluation is not None and (
         user.role == "admin" or user.id in (evaluation.evaluator_id, evaluation.supervisee_id)
     )
-    if not allowed:  # same answer for "missing" and "not yours", so ids cannot be probed
+    if not allowed:  
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evaluation not found.")
     return _present(db, evaluation)

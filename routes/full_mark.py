@@ -34,7 +34,7 @@ def get_rubric(user: UserModel = Depends(get_current_user), db: Session = Depend
 
 @router.get("/supervisees")
 def get_supervisees(
-    user: UserModel = Depends(require_roles("admin", *SUPERVISOR_ROLES)), db: Session = Depends(get_db)
+    user: UserModel = Depends(require_roles(*SUPERVISOR_ROLES)), db: Session = Depends(get_db)
 ):
     data = [{"id": u.id, "full_name": u.full_name, "email": u.email} for u in list_supervisees(db, user)]
     return {"status": "success", "data": data}

@@ -14,7 +14,7 @@ log = logging.getLogger("mocoss.ai")
 
 PROMPT_VERSION = "v1"
 DEFAULT_MODEL = "gemini-3.6-flash"
-INLINE_LIMIT_BYTES = 15 * 1024 * 1024  # inline request limit is 20 MB in total, keep headroom for the prompt
+INLINE_LIMIT_BYTES = 15 * 1024 * 1024  
 
 MIME_BY_EXT = {
     ".mp3": "audio/mp3", ".wav": "audio/wav", ".aac": "audio/aac", ".ogg": "audio/ogg",
@@ -212,13 +212,13 @@ def _generate_with_audio(audio_path: str, mime: str, prompt: str) -> dict:
                 return _parse_json(response.text)
             except AiError:
                 raise
-            except Exception as e:  # network, quota, server errors
+            except Exception as e:  
                 last_error = e
                 log.warning("Gemini call failed (attempt %s): %s", attempt + 1, e)
                 time.sleep(2)
         raise AiError("The AI service is unavailable right now.") from last_error
     finally:
-        if remote is not None:  # do not leave the recording stored with the provider
+        if remote is not None:  
             try:
                 client.files.delete(name=remote.name)
             except Exception:  # pragma: no cover

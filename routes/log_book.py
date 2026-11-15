@@ -1,28 +1,47 @@
+from datetime import date
+from typing import Optional
+
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+
 from database import get_db
-from services.logBookService import create_log_entry, get_log_entries_by_user
-from datetime import date
+from models.userM import UserModel
+from services import reviewService as svc
+from services.authService import get_current_user
 
 router = APIRouter(prefix="/api/log-book", tags=["Log Book"])
+MODULE = "log-book"
 
-class LogBookCreateSchema(BaseModel):
+
+class LogBookSchema(BaseModel):
     activity_title: str
     session_date: date
     duration_minutes: int = 60
     category: str = "Individual"
-    reflection_notes: str = None
+    reflection_notes: Optional[str] = None
+    submit: bool = False  
+
+
+def _data(body: LogBookSchema) -> dict:
+    return body.model_dump(exclude={"submit"}) if hasattr(body, "model_dump") else body.dict(exclude={"submit"})
+
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def create_log(data: LogBookCreateSchema, user_id: int = 1, db: Session = Depends(get_db)):
-    record = create_log_entry(
-        db, user_id, data.activity_title, data.session_date, 
-        data.duration_minutes, data.category, data.reflection_notes
-    )
-    return {"status": "success", "data": record}
+def create_log(body: LogBookSchema, user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
+    return {"status": "success", "data": svc.create_own(db, MODULE, user, _data(body), body.submit)}
+
 
 @router.get("/")
-def list_logs(user_id: int = 1, db: Session = Depends(get_db)):
-    records = get_log_entries_by_user(db, user_id)
-    return {"status": "success", "data": records}
+def list_logs(user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
+    return {"status": "success", "data": svc.list_own(db, MODULE, user)}
+
+
+@router.get("/{record_id}")
+def get_log(record_id: int, user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
+    return {"status": "success", "data": svc.get_own(db, MODULE, user, record_id)}
+
+
+@router.put("/{record_id}")
+def update_log(record_id: int, body: LogBookSchema, user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
+    return {"status": "success", "data": svc.update_own(db, MODULE, user, record_id, _data(body), body.submit)}

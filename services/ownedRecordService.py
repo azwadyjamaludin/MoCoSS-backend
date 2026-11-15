@@ -1,8 +1,3 @@
-"""Generic CRUD for tables where every row belongs to one user (user_id column).
-
-Used by self reflection, psychoeducation and professional development.
-A user can only ever see or change their own rows.
-"""
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 

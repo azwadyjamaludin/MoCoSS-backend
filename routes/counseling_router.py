@@ -1,12 +1,17 @@
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
 from models.userM import UserModel
 from services import counselingSessionService as svc
-from services.authService import get_current_user
+from services.authService import SUPERVISOR_ROLES, get_current_user, require_roles
+
+
+class FeedbackSchema(BaseModel):
+    sv_feedback: str
 
 
 def build_session_router(prefix: str, tag: str, Model, kind: str, code_attr: str) -> APIRouter:
@@ -50,16 +55,34 @@ def build_session_router(prefix: str, tag: str, Model, kind: str, code_attr: str
             background_tasks.add_task(svc.run_session_analysis, Model, record.id, kind, language)
         return {"status": "success", "data": svc.present(record, code_attr)}
 
+
     @router.get("/sessions")
     def list_sessions(user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
         return {"status": "success", "data": [svc.present(r, code_attr) for r in svc.list_sessions(db, Model, user.id)]}
+
 
     @router.get("/sessions/{session_id}")
     def get_session(session_id: int, user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
         return {"status": "success", "data": svc.present(svc.get_session(db, Model, user.id, session_id), code_attr)}
 
+    
+    @router.get("/review/sessions")
+    def review_list(user: UserModel = Depends(require_roles(*SUPERVISOR_ROLES)), db: Session = Depends(get_db)):
+        rows = svc.list_for_supervisor(db, Model, user)
+        return {"status": "success", "data": [svc.present_for_review(db, r, code_attr) for r in rows]}
+
+
+    @router.get("/review/sessions/{session_id}")
+    def review_get(session_id: int, user: UserModel = Depends(require_roles(*SUPERVISOR_ROLES)), db: Session = Depends(get_db)):
+        return {"status": "success", "data": svc.present_for_review(db, svc.get_for_supervisor(db, Model, user, session_id), code_attr)}
+
+
     @router.post("/feedback/{session_id}")
-    def save_feedback(session_id: int, user: UserModel = Depends(get_current_user), db: Session = Depends(get_db),sv_feedback: str = Form(...)):
-            return {"status": "success", "data": svc.present(svc.save_feedback(db, Model, user.id, session_id, sv_feedback), code_attr)}
+    def save_feedback(
+        session_id: int, body: FeedbackSchema,
+        user: UserModel = Depends(require_roles(*SUPERVISOR_ROLES)), db: Session = Depends(get_db),
+    ):
+        record = svc.save_feedback(db, Model, user, session_id, body.sv_feedback)
+        return {"status": "success", "data": svc.present_for_review(db, record, code_attr)}
 
     return router

@@ -102,10 +102,18 @@ CREATE TABLE IF NOT EXISTS case_analyses (
     presenting_problem TEXT NOT NULL,
     session_dynamics TEXT NULL,
     ai_supervision_feedback TEXT NULL,
+    sections TEXT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'draft',
+    submitted_at TIMESTAMP NULL,
+    reviewed_at TIMESTAMP NULL,
+    reviewed_by INT NULL,
+    review_comment TEXT NULL,
+    field_advice TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_case_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    INDEX idx_case_user_id (user_id)
+    INDEX idx_case_user_id (user_id),
+    INDEX idx_case_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS log_books (
@@ -116,10 +124,17 @@ CREATE TABLE IF NOT EXISTS log_books (
     duration_minutes INT DEFAULT 60,
     category VARCHAR(50) DEFAULT 'Individual',
     reflection_notes TEXT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'draft',
+    submitted_at TIMESTAMP NULL,
+    reviewed_at TIMESTAMP NULL,
+    reviewed_by INT NULL,
+    review_comment TEXT NULL,
+    field_advice TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_log_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    INDEX idx_log_user_id (user_id)
+    INDEX idx_log_user_id (user_id),
+    INDEX idx_log_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS referral_consultations (
@@ -251,3 +266,17 @@ CREATE TABLE IF NOT EXISTS psychology_tests (
 
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE TABLE IF NOT EXISTS reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    module VARCHAR(30) NOT NULL,
+    record_id INT NOT NULL,
+    reviewer_id INT NOT NULL,
+    decision VARCHAR(20) NOT NULL,
+    comment TEXT NULL,
+    field_advice TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_review_reviewer FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX idx_review_target (module, record_id),
+    INDEX idx_review_reviewer (reviewer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

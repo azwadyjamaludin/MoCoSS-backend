@@ -19,7 +19,7 @@ class IndCounSession(Base):
     consent_given = Column(Integer, default=0)
     ai_status = Column(String(50), default="Pending")  
     ai_error = Column(String(255), nullable=True)   
-    ai_gerated_at = Column(TIMESTAMP, nullable=True)          
+    ai_generated_at = Column(TIMESTAMP, nullable=True)          
     ai_model = Column(String(100), nullable=True)  
     ai_prompt_version = Column(String(20), nullable=True)
     created_at = Column(TIMESTAMP, server_default=text("CURRENT_TIMESTAMP"))

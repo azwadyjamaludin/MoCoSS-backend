@@ -1,7 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text, Date, TIMESTAMP, ForeignKey, text
 from database import Base
+from models.reviewColumns import ReviewColumns
 
-class LogBookModel(Base):
+class LogBookModel(ReviewColumns, Base):
     __tablename__ = "log_books"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)

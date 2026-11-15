@@ -9,7 +9,7 @@ class SelfReflectionModel(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     title = Column(String(255), nullable=False)
     reflection_date = Column(Date, nullable=False)
-    content = Column(Text, nullable=False)          # what happened / how I felt
+    content = Column(Text, nullable=False)          
     strengths = Column(Text, nullable=True)
     growth_areas = Column(Text, nullable=True)
     action_plan = Column(Text, nullable=True)

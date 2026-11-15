@@ -8,7 +8,8 @@ from models.userM import ALGORITHM, SECRET_KEY, UserModel
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
-SUPERVISOR_ROLES = ("supervisor", "field supervisor")
+SUPERVISOR_ROLES = ("supervisor", "superadmin")
+ADMIN_ROLES = ("admin")
 
 
 def get_current_user(
